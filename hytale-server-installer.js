@@ -8,7 +8,22 @@ import { promisify } from "util";
 import os from "os";
 import { exit } from "process";
 
-const RUNTIME_DIR = process.cwd();
+process.on("uncaughtException", err => {
+  console.error("UNCAUGHT EXCEPTION:");
+  console.error(err?.stack || err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", err => {
+  console.error("UNHANDLED PROMISE REJECTION:");
+  console.error(err?.stack || err);
+  process.exit(1);
+});
+
+const RUNTIME_DIR =
+  process.pkg
+    ? path.dirname(process.execPath)
+    : process.cwd();
 
 const DOWNLOAD_URL = "https://downloader.hytale.com/hytale-downloader.zip";
 const DOWNLOADER_ZIP = path.join(RUNTIME_DIR, "hytale-downloader.zip");
@@ -96,16 +111,22 @@ async function checkJava() {
 }
 
 async function runDownloader() {
-  const exePath = path.join(EXTRACT_DIR, DOWNLOADER_EXE);
+  const exePath = path.resolve(EXTRACT_DIR, DOWNLOADER_EXE);
 
   return new Promise((resolve, reject) => {
-    const proc = spawn(exePath, [], {
-      stdio: "inherit"
-    });
+    const proc = spawn(exePath, [], { stdio: "inherit" });
 
-    proc.on("exit", code =>
-      code === 0 ? resolve() : reject(new Error("Downloader failed"))
-    );
+    proc.on("error", reject);
+
+    proc.on("exit", (code, signal) => {
+      if (signal) {
+        reject(new Error(`Downloader terminated by signal ${signal}`));
+      } else if (code !== 0) {
+        reject(new Error(`Downloader exited with code ${code}`));
+      } else {
+        resolve();
+      }
+    });
   });
 }
 
