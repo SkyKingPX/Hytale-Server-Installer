@@ -17,4 +17,4 @@ Default config:
 If you encounter any issues, please create an Issue in the issues tab.
 
 # Building from source
-Run `npx pkg hytale-server-installer.cjs --targets node20-win-x64,node20-linux-x64,node20-macos-x64 --no-bytecode --public`
+Run `npx pkg hytale-server-installer.cjs --targets node20-win-x64,node20-linux-x64 --no-bytecode --public`
